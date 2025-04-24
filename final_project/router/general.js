@@ -101,10 +101,10 @@ async function fetchBooksByTitle(title) {
   }
 }
 
-fetchAllBooks();          // save screenshot as task10.png
-fetchBookByISBN("1");     // save screenshot as task11.png
-fetchBooksByAuthor("Chinua Achebe"); // task12.png
-fetchBooksByTitle("Things Fall Apart"); // task13.png
+// fetchAllBooks();          
+// fetchBookByISBN("1");     
+// fetchBooksByAuthor("Chinua Achebe"); 
+// fetchBooksByTitle("Things Fall Apart");
 
 
 module.exports.general = public_users;

@@ -1,43 +1,110 @@
-const express = require('express');
-let books = require("./booksdb.js");
+const express = require("express");
+let booksdb = require("./booksdb.js");
 let isValid = require("./auth_users.js").isValid;
 let users = require("./auth_users.js").users;
 const public_users = express.Router();
 
-
-public_users.post("/register", (req,res) => {
-  //Write your code here
-  return res.status(300).json({message: "Yet to be implemented"});
+public_users.post("/register", (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) {
+    return res
+      .status(400)
+      .json({ message: "Username and password are required" });
+  }
+  if (!isValid(username)) {
+    return res.status(400).json({ message: "Invalid username format" });
+  }
+  if (users.some((u) => u.username === username)) {
+    return res.status(409).json({ message: "User already exists" });
+  }
+  users.push({ username, password });
+  return res.status(201).json({ message: "User successfully registered" });
 });
 
-// Get the book list available in the shop
-public_users.get('/',function (req, res) {
-  //Write your code here
-  return res.status(300).json({message: "Yet to be implemented"});
+public_users.get("/", (req, res) => {
+  return res.status(200).json(booksdb);
 });
 
-// Get book details based on ISBN
-public_users.get('/isbn/:isbn',function (req, res) {
-  //Write your code here
-  return res.status(300).json({message: "Yet to be implemented"});
- });
-  
-// Get book details based on author
-public_users.get('/author/:author',function (req, res) {
-  //Write your code here
-  return res.status(300).json({message: "Yet to be implemented"});
+public_users.get("/isbn/:isbn", (req, res) => {
+  const { isbn } = req.params;
+  const book = booksdb[isbn];
+  if (book) {
+    return res.status(200).json(book);
+  }
+  return res.status(404).json({ message: "Book not found" });
 });
 
-// Get all books based on title
-public_users.get('/title/:title',function (req, res) {
-  //Write your code here
-  return res.status(300).json({message: "Yet to be implemented"});
+public_users.get("/author/:author", (req, res) => {
+  const author = decodeURIComponent(req.params.author);
+  const results = Object.values(booksdb).filter((b) => b.author === author);
+  if (results.length > 0) {
+    return res.status(200).json(results);
+  }
+  return res.status(404).json({ message: "No books found by that author" });
 });
 
-//  Get book review
-public_users.get('/review/:isbn',function (req, res) {
-  //Write your code here
-  return res.status(300).json({message: "Yet to be implemented"});
+public_users.get("/title/:title", (req, res) => {
+  const title = decodeURIComponent(req.params.title);
+  const book = Object.values(booksdb).find((b) => b.title === title);
+  if (book) {
+    return res.status(200).json(book);
+  }
+  return res.status(404).json({ message: "No book found with that title" });
 });
+
+public_users.get("/review/:isbn", (req, res) => {
+  const { isbn } = req.params;
+  const book = booksdb[isbn];
+  if (book) {
+    return res.status(200).json(book.reviews);
+  }
+  return res.status(404).json({ message: "Book not found" });
+});
+
+const axios = require("axios");
+
+function fetchAllBooks() {
+  axios.get("http://localhost:5000/")
+    .then(response => {
+      console.log("All books:", JSON.stringify(response.data, null, 2));
+    })
+    .catch(error => {
+      console.error("Error fetching all books:", error.message);
+    });
+}
+
+async function fetchBookByISBN(isbn) {
+  try {
+    const resp = await axios.get(`http://localhost:5000/isbn/${isbn}`);
+    console.log(`Book ${isbn}:`, JSON.stringify(resp.data, null, 2));
+  } catch (err) {
+    console.error(`Error fetching ISBN ${isbn}:`, err.message);
+  }
+}
+
+function fetchBooksByAuthor(author) {
+  axios.get(`http://localhost:5000/author/${encodeURIComponent(author)}`)
+    .then(resp => {
+      console.log(`Books by ${author}:`, JSON.stringify(resp.data, null, 2));
+    })
+    .catch(err => {
+      console.error(`Error fetching author ${author}:`, err.message);
+    });
+}
+
+async function fetchBooksByTitle(title) {
+  try {
+    const resp = await axios.get(`http://localhost:5000/title/${encodeURIComponent(title)}`);
+    console.log(`Title "${title}":`, JSON.stringify(resp.data, null, 2));
+  } catch (err) {
+    console.error(`Error fetching title ${title}:`, err.message);
+  }
+}
+
+fetchAllBooks();          // save screenshot as task10.png
+fetchBookByISBN("1");     // save screenshot as task11.png
+fetchBooksByAuthor("Chinua Achebe"); // task12.png
+fetchBooksByTitle("Things Fall Apart"); // task13.png
+
 
 module.exports.general = public_users;
